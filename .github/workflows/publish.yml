@@ -31,8 +31,7 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Clear token so OIDC can handle auth
-        run: npm config delete //registry.npmjs.org/:_authToken
-
       - name: Publish
         run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
