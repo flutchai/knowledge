@@ -1,0 +1,45 @@
+{
+  "name": "@flutchai/knowledge",
+  "version": "0.1.0",
+  "description": "Knowledge Management System — retriever + KMS NestJS modules with MongoDB and PostgreSQL (pgvector) support",
+  "author": "Flutchai",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc -p tsconfig.build.json --watch",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "yarn build"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "reflect-metadata": "^0.1.13"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/mongodb": "^0.0.6",
+    "@langchain/openai": "^0.3.0",
+    "@langchain/textsplitters": "^0.1.0",
+    "@nestjs/config": "^3.0.0",
+    "@nestjs/event-emitter": "^2.0.0",
+    "class-transformer": "^0.5.0",
+    "class-validator": "^0.14.0",
+    "mongodb": "^6.0.0",
+    "mongoose": "^8.0.0",
+    "pg": "^8.11.0",
+    "pgvector": "^0.2.0"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    "reflect-metadata": "^0.1.13",
+    "typescript": "^5.0.0"
+  }
+}
