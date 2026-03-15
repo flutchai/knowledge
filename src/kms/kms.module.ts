@@ -11,8 +11,8 @@ export interface KmsModuleOptions {
 
   /** Your implementations of the repository interfaces. */
   repositories: {
-    knowledgeBase: new (...args: any[]) => IKnowledgeBaseRepository;
-    article: new (...args: any[]) => IArticleRepository;
+    knowledgeBase: Type<IKnowledgeBaseRepository>;
+    article: Type<IArticleRepository>;
   };
 
   /**
@@ -20,7 +20,7 @@ export interface KmsModuleOptions {
    * Use this to pass TypeOrmModule.forFeature([...]) so that
    * repository classes have access to their TypeORM providers.
    */
-  extraImports?: any[];
+  extraImports?: DynamicModule["imports"];
 }
 
 @Module({})

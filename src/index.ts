@@ -1,5 +1,9 @@
 // Modules
-export { RetrieverModule, RetrieverModuleOptions, VectorStoreType } from "./retriever/retriever.module";
+export {
+  RetrieverModule,
+  RetrieverModuleOptions,
+  VectorStoreType,
+} from "./retriever/retriever.module";
 export { KmsModule, KmsModuleOptions } from "./kms/kms.module";
 
 // Tokens
@@ -7,12 +11,18 @@ export { RetrieverTokens } from "./retriever/retriever.tokens";
 export { KmsTokens } from "./kms/kms.tokens";
 
 // Retriever interfaces & types
-export { IKnowledgeRetrieverService, ITempRetrieverService } from "./retriever/interfaces/retriever.interface";
+export {
+  IKnowledgeRetrieverService,
+  ITempRetrieverService,
+} from "./retriever/interfaces/retriever.interface";
 export { IVectorStore } from "./retriever/interfaces/vector-store.interface";
 export { CustomDocument, CustomDocumentMetadata, RetrieveQueryOptions } from "./retriever/types";
 
 // Vector store providers
-export { PostgresVectorStore, PostgresVectorStoreConfig } from "./retriever/providers/postgres-vector.store";
+export {
+  PostgresVectorStore,
+  PostgresVectorStoreConfig,
+} from "./retriever/providers/postgres-vector.store";
 export { MongoVectorStore, MongoVectorStoreConfig } from "./retriever/providers/mongo-vector.store";
 
 // Services

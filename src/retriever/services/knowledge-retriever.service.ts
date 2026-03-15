@@ -1,10 +1,6 @@
 import { Injectable, Inject, Logger } from "@nestjs/common";
 import { DocumentInterface } from "@langchain/core/documents";
-import {
-  CustomDocument,
-  CustomDocumentMetadata,
-  RetrieveQueryOptions,
-} from "../types";
+import { CustomDocument, CustomDocumentMetadata, RetrieveQueryOptions } from "../types";
 import { IVectorStore } from "../interfaces/vector-store.interface";
 import { DocumentUtilsService } from "../utils/document-utils.service";
 import { RetrieverTokens } from "../retriever.tokens";
@@ -19,18 +15,18 @@ export class KnowledgeRetrieverService implements IKnowledgeRetrieverService {
   constructor(
     @Inject(RetrieverTokens.PERSISTENCE_VECTOR_STORE)
     private readonly vectorStore: IVectorStore,
-    private readonly documentUtils: DocumentUtilsService
+    private readonly documentUtils: DocumentUtilsService,
   ) {}
 
   async addDocuments(
     docs: DocumentInterface[],
     knowledgeBaseId: string,
     splitOptions?: ISplitOptions,
-    ids?: string[]
+    ids?: string[],
   ): Promise<string[]> {
     const createdAt = new Date().toISOString();
 
-    docs = docs.map(doc => ({
+    docs = docs.map((doc) => ({
       ...doc,
       pageContent: DocumentUtilsService.cleanNoIndex(doc.pageContent),
       metadata: { ...doc.metadata, knowledgeBaseId, createdAt },
@@ -52,11 +48,9 @@ export class KnowledgeRetrieverService implements IKnowledgeRetrieverService {
     docs: CustomDocument[],
     ids: string[],
     knowledgeBaseId: string,
-    splitOptions?: ISplitOptions
+    splitOptions?: ISplitOptions,
   ): Promise<string[]> {
-    this.logger.log(
-      `Updating ${docs.length} documents, deleting ${ids.length} old chunks`
-    );
+    this.logger.log(`Updating ${docs.length} documents, deleting ${ids.length} old chunks`);
     try {
       await this.vectorStore.delete({ ids });
     } catch (error) {
@@ -72,7 +66,7 @@ export class KnowledgeRetrieverService implements IKnowledgeRetrieverService {
     query: string,
     searchType: RetrieverSearchType,
     knowledgeBaseIds: string[],
-    options?: RetrieveQueryOptions
+    options?: RetrieveQueryOptions,
   ): Promise<CustomDocument[]> {
     const mergedOptions = {
       ...options,
@@ -84,19 +78,16 @@ export class KnowledgeRetrieverService implements IKnowledgeRetrieverService {
 
     this.logger.log(`Searching for "${query}"`, { searchType, knowledgeBaseIds });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LangChain DocumentInterface metadata type
     let results: DocumentInterface<Record<string, any>>[] = [];
 
-    if (
-      searchType === RetrieverSearchType.Similarity ||
-      searchType === RetrieverSearchType.MMR
-    ) {
-      results =
-        (await this.vectorStore.vectorSearch(query, searchType, mergedOptions)) ?? [];
+    if (searchType === RetrieverSearchType.Similarity || searchType === RetrieverSearchType.MMR) {
+      results = (await this.vectorStore.vectorSearch(query, searchType, mergedOptions)) ?? [];
     } else if (searchType === RetrieverSearchType.Search) {
       results = (await this.vectorStore.textSearch(query, mergedOptions)) ?? [];
     }
 
-    const customDocs: CustomDocument[] = results.map(doc => ({
+    const customDocs: CustomDocument[] = results.map((doc) => ({
       ...doc,
       pageContent: DocumentUtilsService.cleanRAGMeta(doc.pageContent),
       metadata: {
@@ -106,17 +97,17 @@ export class KnowledgeRetrieverService implements IKnowledgeRetrieverService {
     }));
 
     return customDocs.filter(
-      d =>
+      (d) =>
         d.metadata.knowledgeBaseId !== null &&
-        knowledgeBaseIds.includes(d.metadata.knowledgeBaseId)
+        knowledgeBaseIds.includes(d.metadata.knowledgeBaseId),
     );
   }
 
-  async getChunkById(chunkId: string): Promise<any> {
+  async getChunkById(chunkId: string): Promise<unknown> {
     return this.vectorStore.getChunkById(chunkId);
   }
 
-  async getChunksForDocument(articleId: string): Promise<any[]> {
+  async getChunksForDocument(articleId: string): Promise<unknown[]> {
     return this.vectorStore.getChunksForDocument(articleId);
   }
 }

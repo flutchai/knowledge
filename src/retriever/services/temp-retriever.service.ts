@@ -13,13 +13,13 @@ export class TempRetrieverService implements ITempRetrieverService {
   constructor(
     @Inject(RetrieverTokens.TEMP_VECTOR_STORE)
     private readonly vectorStore: IVectorStore,
-    private readonly documentUtils: DocumentUtilsService
+    private readonly documentUtils: DocumentUtilsService,
   ) {}
 
   async addDocuments(
     docs: DocumentInterface[],
     splitOptions?: ISplitOptions,
-    ids?: string[]
+    ids?: string[],
   ): Promise<string[]> {
     if (splitOptions?.enabled) {
       docs = await this.documentUtils.splitDocsToChunks(docs, splitOptions);
@@ -39,12 +39,9 @@ export class TempRetrieverService implements ITempRetrieverService {
   async search(
     query: string,
     searchType: RetrieverSearchType,
-    options?: RetrieveQueryOptions
+    options?: RetrieveQueryOptions,
   ): Promise<DocumentInterface[] | null> {
-    if (
-      searchType === RetrieverSearchType.Similarity ||
-      searchType === RetrieverSearchType.MMR
-    ) {
+    if (searchType === RetrieverSearchType.Similarity || searchType === RetrieverSearchType.MMR) {
       return this.vectorStore.vectorSearch(query, searchType, options);
     } else if (searchType === RetrieverSearchType.Search) {
       return this.vectorStore.textSearch(query, options);

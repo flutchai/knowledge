@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LangChain vector store adapter: metadata types are inherently Record<string, any> */
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Pool } from "pg";
 import { Document, DocumentInterface } from "@langchain/core/documents";
@@ -31,7 +32,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
   constructor(
     private readonly pool: Pool,
     private readonly embeddingsService: EmbeddingsService,
-    config: PostgresVectorStoreConfig = {}
+    config: PostgresVectorStoreConfig = {},
   ) {
     this.tableName = config.tableName ?? "kms_embeddings";
     this.dimensions = config.dimensions ?? 1536;
@@ -40,7 +41,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
   async onModuleInit(): Promise<void> {
     await this.ensureTable();
     this.logger.log(
-      `PostgresVectorStore initialized — table: ${this.tableName}, dimensions: ${this.dimensions}`
+      `PostgresVectorStore initialized — table: ${this.tableName}, dimensions: ${this.dimensions}`,
     );
   }
 
@@ -79,15 +80,12 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
     `);
   }
 
-  async addDocuments(
-    documents: Document[],
-    options?: { ids?: string[] }
-  ): Promise<string[]> {
+  async addDocuments(documents: Document[], options?: { ids?: string[] }): Promise<string[]> {
     if (documents.length === 0) return [];
 
     const embeddings = await this.embeddingsService
       .createEmbeddings()
-      .embedDocuments(documents.map(d => d.pageContent));
+      .embedDocuments(documents.map((d) => d.pageContent));
 
     const ids: string[] = [];
     const client = await this.pool.connect();
@@ -112,14 +110,14 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
                    metadata = EXCLUDED.metadata,
                    embedding = EXCLUDED.embedding
              RETURNING id`,
-            [providedId, doc.pageContent, JSON.stringify(doc.metadata), vector]
+            [providedId, doc.pageContent, JSON.stringify(doc.metadata), vector],
           );
         } else {
           result = await client.query(
             `INSERT INTO ${this.tableName} (content, metadata, embedding)
              VALUES ($1, $2, $3::vector)
              RETURNING id`,
-            [doc.pageContent, JSON.stringify(doc.metadata), vector]
+            [doc.pageContent, JSON.stringify(doc.metadata), vector],
           );
         }
 
@@ -145,20 +143,18 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
     const placeholders = params.ids.map((_, i) => `$${i + 1}`).join(", ");
     await this.pool.query(
       `DELETE FROM ${this.tableName} WHERE id IN (${placeholders})`,
-      params.ids
+      params.ids,
     );
   }
 
   async vectorSearch(
     query: string,
     searchType: RetrieverSearchType,
-    options?: RetrieveQueryOptions
+    options?: RetrieveQueryOptions,
   ): Promise<DocumentInterface<Record<string, any>>[] | null> {
     try {
       const limit = options?.limit ?? 5;
-      const queryEmbedding = await this.embeddingsService
-        .createEmbeddings()
-        .embedQuery(query);
+      const queryEmbedding = await this.embeddingsService.createEmbeddings().embedQuery(query);
 
       const vector = `[${queryEmbedding.join(",")}]`;
 
@@ -200,7 +196,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
 
       const result = await this.pool.query(sql, params);
 
-      let docs = result.rows.map(row => ({
+      let docs = result.rows.map((row) => ({
         pageContent: row.content,
         metadata: { ...(row.metadata ?? {}), score: row.score },
       }));
@@ -209,7 +205,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
         searchType === RetrieverSearchType.Similarity &&
         typeof options?.scoreThreshold === "number"
       ) {
-        docs = docs.filter(d => (d.metadata.score ?? 0) >= options.scoreThreshold!);
+        docs = docs.filter((d) => (d.metadata.score ?? 0) >= options.scoreThreshold!);
       }
 
       // Simple MMR reranking: pick diverse results
@@ -226,7 +222,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
 
   async textSearch(
     query: string,
-    options?: RetrieveQueryOptions
+    options?: RetrieveQueryOptions,
   ): Promise<DocumentInterface<Record<string, any>>[] | null> {
     try {
       const limit = options?.limit ?? 5;
@@ -246,7 +242,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
       `;
 
       const result = await this.pool.query(sql, params);
-      return result.rows.map(row => ({
+      return result.rows.map((row) => ({
         pageContent: row.content,
         metadata: { ...(row.metadata ?? {}), score: row.score },
       }));
@@ -260,7 +256,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
     try {
       const result = await this.pool.query(
         `SELECT id::text, content, metadata FROM ${this.tableName} WHERE id = $1`,
-        [chunkId]
+        [chunkId],
       );
       return result.rows[0] ?? null;
     } catch (error) {
@@ -276,7 +272,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
          FROM ${this.tableName}
          WHERE metadata->>'articleId' = $1
             OR metadata->>'docId' = $1`,
-        [articleId]
+        [articleId],
       );
       return result.rows;
     } catch (error) {
@@ -292,7 +288,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
    */
   private buildWhereClause(
     filter: Record<string, any> | undefined,
-    baseParams: any[]
+    baseParams: any[],
   ): { whereClause: string; params: any[] } {
     const params = [...baseParams];
     const conditions: string[] = [];
@@ -303,7 +299,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
           const arr = value.$in as any[];
           if (arr.length > 0) {
             const idxStart = params.length + 1;
-            arr.forEach(v => params.push(v));
+            arr.forEach((v) => params.push(v));
             const placeholders = arr.map((_, i) => `$${idxStart + i}`).join(", ");
             conditions.push(`metadata->>'${key}' IN (${placeholders})`);
           }
@@ -314,8 +310,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
       }
     }
 
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     return { whereClause, params };
   }
 
@@ -326,7 +321,7 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
   private mmrRerank(
     docs: DocumentInterface<Record<string, any>>[],
     k: number,
-    lambda: number
+    lambda: number,
   ): DocumentInterface<Record<string, any>>[] {
     if (docs.length <= k) return docs;
     const selected: DocumentInterface<Record<string, any>>[] = [];
@@ -342,12 +337,12 @@ export class PostgresVectorStore implements IVectorStore, OnModuleInit {
           selected.length === 0
             ? 0
             : Math.max(
-                ...selected.map(s =>
+                ...selected.map((s) =>
                   this.cosineSimilarityFromScores(
                     remaining[i].metadata.score ?? 0,
-                    s.metadata.score ?? 0
-                  )
-                )
+                    s.metadata.score ?? 0,
+                  ),
+                ),
               );
         const mmrScore = lambda * relevance - (1 - lambda) * maxSim;
         if (mmrScore > bestScore) {

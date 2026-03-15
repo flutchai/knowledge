@@ -10,11 +10,11 @@ export interface IKnowledgeBaseRepository {
   findById(id: string): Promise<IKnowledgeBase | null>;
   findByCompany(
     companyId: string,
-    options: PaginationOptions
+    options: PaginationOptions,
   ): Promise<PaginatedResult<IKnowledgeBase>>;
   findByOwner(
     ownerId: string,
-    options: PaginationOptions
+    options: PaginationOptions,
   ): Promise<PaginatedResult<IKnowledgeBase>>;
   create(data: ICreateKnowledgeBase): Promise<IKnowledgeBase>;
   update(id: string, data: IUpdateKnowledgeBase): Promise<IKnowledgeBase | null>;
