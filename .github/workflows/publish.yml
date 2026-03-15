@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: https://registry.npmjs.org
 
       - name: Enable Corepack
         run: corepack enable
@@ -29,6 +30,9 @@ jobs:
 
       - name: Build
         run: yarn build
+
+      - name: Clear token so OIDC can handle auth
+        run: npm config delete //registry.npmjs.org/:_authToken
 
       - name: Publish
         run: npm publish --access public --provenance
