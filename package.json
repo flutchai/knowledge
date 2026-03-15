@@ -1,6 +1,6 @@
 {
   "name": "@flutchai/knowledge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NestJS library for knowledge base management with vector search — PostgreSQL (pgvector) and MongoDB backends, OpenAI embeddings, RAG retrieval",
   "author": "Flutchai",
   "license": "MIT",
@@ -43,7 +43,7 @@
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13 || ^0.2.0"
   },
   "dependencies": {
     "@langchain/core": "^0.3.0",
