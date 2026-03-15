@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LangChain vector store adapter: metadata types are inherently Record<string, any> */
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Connection } from "mongoose";
 import { ObjectId } from "mongodb";
@@ -32,7 +33,7 @@ export class MongoVectorStore
     readonly connection: Connection,
     readonly embeddingsService: EmbeddingsService,
     readonly docutils: DocumentUtilsService,
-    config: MongoVectorStoreConfig
+    config: MongoVectorStoreConfig,
   ) {
     super(embeddingsService.createEmbeddings(), {
       // Cast to any: mongoose and @langchain/mongodb may bundle different mongodb minor versions
@@ -56,19 +57,18 @@ export class MongoVectorStore
   public async vectorSearch(
     query: string,
     searchType: RetrieverSearchType = RetrieverSearchType.MMR,
-    options?: RetrieveQueryOptions
+    options?: RetrieveQueryOptions,
   ): Promise<DocumentInterface<Record<string, any>>[] | null> {
     try {
       if (searchType === RetrieverSearchType.Similarity) {
         const mongoFilter = options?.filter ? { preFilter: options.filter } : undefined;
         const rawLimit = options?.limit;
-        const limit =
-          typeof rawLimit === "string" ? parseInt(rawLimit, 10) : rawLimit || 5;
+        const limit = typeof rawLimit === "string" ? parseInt(rawLimit, 10) : rawLimit || 5;
 
         const retrievedDocsWithScores = await this.similaritySearchWithScore(
           query,
           limit,
-          mongoFilter
+          mongoFilter,
         );
 
         let retrievedDocs = retrievedDocsWithScores.map(([doc, score]) => ({
@@ -78,7 +78,7 @@ export class MongoVectorStore
 
         if (typeof options?.scoreThreshold === "number") {
           retrievedDocs = retrievedDocs.filter(
-            doc => (doc.metadata?.score ?? 0) >= options.scoreThreshold!
+            (doc) => (doc.metadata?.score ?? 0) >= options.scoreThreshold!,
           );
         }
 
@@ -86,8 +86,7 @@ export class MongoVectorStore
       } else if (searchType === RetrieverSearchType.MMR) {
         const mongoFilter = options?.filter ? { preFilter: options.filter } : undefined;
         const rawLimit = options?.limit;
-        const numericLimit =
-          typeof rawLimit === "string" ? parseInt(rawLimit, 10) : rawLimit;
+        const numericLimit = typeof rawLimit === "string" ? parseInt(rawLimit, 10) : rawLimit;
 
         const mmrOptions = {
           k: numericLimit || this._config.retrieveK || 5,
@@ -106,13 +105,12 @@ export class MongoVectorStore
 
   public async textSearch(
     query: string,
-    options?: RetrieveQueryOptions
+    options?: RetrieveQueryOptions,
   ): Promise<DocumentInterface<Record<string, any>>[] | null> {
     try {
       const collection = this.connection.collection(this._collectionName);
       const rawLimit = options?.limit;
-      const limit =
-        typeof rawLimit === "string" ? parseInt(rawLimit, 10) : rawLimit || 5;
+      const limit = typeof rawLimit === "string" ? parseInt(rawLimit, 10) : rawLimit || 5;
 
       const pipeline = [
         { $search: { index: this.textIndexName, text: { query, path: "text" } } },
@@ -131,13 +129,13 @@ export class MongoVectorStore
   async delete(params: { ids: any[] }): Promise<void> {
     try {
       const collection = this.connection.collection(this._collectionName);
-      const objectIds = params.ids.map(id =>
-        typeof id === "string" ? new ObjectId(id) : new ObjectId(String(id))
+      const objectIds = params.ids.map((id) =>
+        typeof id === "string" ? new ObjectId(id) : new ObjectId(String(id)),
       );
       const result = await collection.deleteMany({ _id: { $in: objectIds } });
       if (result.deletedCount !== params.ids.length) {
         this.logger.warn(
-          `Expected to delete ${params.ids.length} docs, deleted ${result.deletedCount}`
+          `Expected to delete ${params.ids.length} docs, deleted ${result.deletedCount}`,
         );
       }
     } catch (error) {

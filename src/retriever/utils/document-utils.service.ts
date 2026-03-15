@@ -1,8 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- LangChain document types use Record<string, any> for metadata */
 import { Injectable, Logger } from "@nestjs/common";
-import {
-  TokenTextSplitter,
-  RecursiveCharacterTextSplitter,
-} from "@langchain/textsplitters";
+import { TokenTextSplitter, RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { DocumentInterface } from "@langchain/core/documents";
 import { CustomDocument } from "../types";
 import {
@@ -22,34 +20,24 @@ export class DocumentUtilsService {
     docs: DocumentInterface<Record<string, any>>[],
     splitOptions?: ISplitOptions,
     defaultChunkSize: number = CHUNKING_DEFAULTS.CHUNK_SIZE,
-    defaultChunkOverlap: number = CHUNKING_DEFAULTS.CHUNK_OVERLAP
+    defaultChunkOverlap: number = CHUNKING_DEFAULTS.CHUNK_OVERLAP,
   ): Promise<DocumentInterface<Record<string, any>>[]> {
     const originalDocCount = docs.length;
-    const splitter = this.createTextSplitter(
-      splitOptions,
-      defaultChunkSize,
-      defaultChunkOverlap
-    );
+    const splitter = this.createTextSplitter(splitOptions, defaultChunkSize, defaultChunkOverlap);
     let chunks = await splitter.transformDocuments(docs);
     chunks = this.addChunkMetadata(chunks, docs);
-    this.logger.debug(
-      `Split ${originalDocCount} documents into ${chunks.length} chunks`
-    );
+    this.logger.debug(`Split ${originalDocCount} documents into ${chunks.length} chunks`);
     return chunks;
   }
 
   private addChunkMetadata(
     chunks: DocumentInterface<Record<string, any>>[],
-    originalDocs: DocumentInterface<Record<string, any>>[]
+    originalDocs: DocumentInterface<Record<string, any>>[],
   ): DocumentInterface<Record<string, any>>[] {
-    const docChunksMap = new Map<
-      string,
-      DocumentInterface<Record<string, any>>[]
-    >();
+    const docChunksMap = new Map<string, DocumentInterface<Record<string, any>>[]>();
 
-    chunks.forEach(chunk => {
-      const docId =
-        chunk.metadata.articleId || chunk.metadata.docId || "unknown";
+    chunks.forEach((chunk) => {
+      const docId = chunk.metadata.articleId || chunk.metadata.docId || "unknown";
       if (!docChunksMap.has(docId)) docChunksMap.set(docId, []);
       docChunksMap.get(docId)!.push(chunk);
     });
@@ -59,7 +47,7 @@ export class DocumentUtilsService {
     docChunksMap.forEach((docChunks, docId) => {
       const totalChunks = docChunks.length;
       const originalDoc = originalDocs.find(
-        d => (d.metadata.articleId || d.metadata.docId || "unknown") === docId
+        (d) => (d.metadata.articleId || d.metadata.docId || "unknown") === docId,
       );
 
       docChunks.forEach((chunk, index) => {
@@ -71,8 +59,7 @@ export class DocumentUtilsService {
             totalChunks,
             chunkLength: chunk.pageContent.length,
             documentLength: originalDoc?.pageContent?.length || null,
-            ...(originalDoc &&
-              this.calculateChunkPosition(chunk, originalDoc, index)),
+            ...(originalDoc && this.calculateChunkPosition(chunk, originalDoc, index)),
           },
         });
       });
@@ -84,7 +71,7 @@ export class DocumentUtilsService {
   private calculateChunkPosition(
     chunk: DocumentInterface<Record<string, any>>,
     originalDoc: DocumentInterface<Record<string, any>>,
-    chunkIndex: number
+    chunkIndex: number,
   ): { startPosition?: number; endPosition?: number } {
     try {
       const chunkContent = chunk.pageContent;
@@ -100,14 +87,11 @@ export class DocumentUtilsService {
       const estimatedStart = Math.floor(chunkIndex * avgChunkSize);
       return {
         startPosition: estimatedStart,
-        endPosition: Math.min(
-          estimatedStart + chunkContent.length,
-          originalContent.length
-        ),
+        endPosition: Math.min(estimatedStart + chunkContent.length, originalContent.length),
       };
     } catch (error) {
       this.logger.warn(
-        `Failed to calculate chunk position: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to calculate chunk position: ${error instanceof Error ? error.message : String(error)}`,
       );
       return {};
     }
@@ -116,7 +100,7 @@ export class DocumentUtilsService {
   private createTextSplitter(
     splitOptions?: ISplitOptions,
     defaultChunkSize: number = CHUNKING_DEFAULTS.CHUNK_SIZE,
-    defaultChunkOverlap: number = CHUNKING_DEFAULTS.CHUNK_OVERLAP
+    defaultChunkOverlap: number = CHUNKING_DEFAULTS.CHUNK_OVERLAP,
   ) {
     if (!splitOptions || !splitOptions.enabled) {
       return new TokenTextSplitter({
@@ -126,44 +110,32 @@ export class DocumentUtilsService {
     }
 
     let chunkSize =
-      splitOptions.chunkSize !== undefined
-        ? splitOptions.chunkSize
-        : defaultChunkSize;
+      splitOptions.chunkSize !== undefined ? splitOptions.chunkSize : defaultChunkSize;
     let chunkOverlap =
-      splitOptions.chunkOverlap !== undefined
-        ? splitOptions.chunkOverlap
-        : defaultChunkOverlap;
+      splitOptions.chunkOverlap !== undefined ? splitOptions.chunkOverlap : defaultChunkOverlap;
 
     if (chunkSize < TEXT_PROCESSING_VALIDATION.MIN_CHUNK_SIZE) {
       this.logger.warn(
-        `chunkSize ${chunkSize} too small, using minimum ${TEXT_PROCESSING_VALIDATION.MIN_CHUNK_SIZE}`
+        `chunkSize ${chunkSize} too small, using minimum ${TEXT_PROCESSING_VALIDATION.MIN_CHUNK_SIZE}`,
       );
       chunkSize = TEXT_PROCESSING_VALIDATION.MIN_CHUNK_SIZE;
     }
 
     if (chunkOverlap >= chunkSize) {
-      this.logger.warn(
-        `chunkOverlap ${chunkOverlap} >= chunkSize ${chunkSize}, adjusting`
-      );
-      chunkOverlap = Math.floor(
-        chunkSize * CHUNKING_DEFAULTS.CHUNK_OVERLAP_RATIO
-      );
+      this.logger.warn(`chunkOverlap ${chunkOverlap} >= chunkSize ${chunkSize}, adjusting`);
+      chunkOverlap = Math.floor(chunkSize * CHUNKING_DEFAULTS.CHUNK_OVERLAP_RATIO);
     }
 
     switch (splitOptions.splitType) {
       case SplitType.SEPARATOR: {
-        const self = this;
         return {
-          async transformDocuments(
-            docs: DocumentInterface[]
-          ): Promise<DocumentInterface[]> {
-            let separator =
-              splitOptions.separator || CHUNKING_DEFAULTS.SEPARATOR;
-            separator = self.sanitizeSeparator(separator);
+          transformDocuments: async (docs: DocumentInterface[]): Promise<DocumentInterface[]> => {
+            let separator = splitOptions.separator || CHUNKING_DEFAULTS.SEPARATOR;
+            separator = this.sanitizeSeparator(separator);
             const result: DocumentInterface[] = [];
             for (const doc of docs) {
               const parts = doc.pageContent.split(separator);
-              parts.forEach(part => {
+              parts.forEach((part) => {
                 if (part.trim()) {
                   result.push({ pageContent: part.trim(), metadata: { ...doc.metadata } });
                 }
@@ -196,7 +168,7 @@ export class DocumentUtilsService {
         Document ${index + 1}: ${doc.metadata.sourceTitle}
         ${doc.pageContent}
         ----
-      `
+      `,
       )
       .join("\n\n");
   }
@@ -205,8 +177,7 @@ export class DocumentUtilsService {
     if (!customDoc.metadata) {
       throw new Error("Document has no metadata");
     }
-    const { sourceTitle, title, articleId, knowledgeBaseId, sourceUrl } =
-      customDoc.metadata;
+    const { sourceTitle, title, articleId, knowledgeBaseId, sourceUrl } = customDoc.metadata;
 
     return {
       type: AttachmentType.CITATION,
@@ -229,17 +200,11 @@ export class DocumentUtilsService {
   } {
     if (!docs.length) return { text: "No relevant documents found", attachments: [] };
 
-    const groups = new Map<
-      string,
-      { title: string; chunks: string[]; doc: CustomDocument }
-    >();
+    const groups = new Map<string, { title: string; chunks: string[]; doc: CustomDocument }>();
 
-    docs.forEach(doc => {
+    docs.forEach((doc) => {
       const key =
-        doc.metadata.articleId ||
-        doc.metadata.sourceUrl ||
-        doc.metadata.sourceTitle ||
-        "";
+        doc.metadata.articleId || doc.metadata.sourceUrl || doc.metadata.sourceTitle || "";
       if (!groups.has(key)) {
         groups.set(key, {
           title: doc.metadata.sourceTitle || doc.metadata.title || "Source",
@@ -276,10 +241,7 @@ export class DocumentUtilsService {
   }
 
   static cleanNoIndex(content: string): string {
-    return content.replace(
-      /<!--\s*NO_INDEX\s*-->[\s\S]*?<!--\s*\/NO_INDEX\s*-->/g,
-      ""
-    );
+    return content.replace(/<!--\s*NO_INDEX\s*-->[\s\S]*?<!--\s*\/NO_INDEX\s*-->/g, "");
   }
 
   private sanitizeSeparator(separator: string): string {

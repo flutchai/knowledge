@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import {
   IKnowledgeBase,
   PaginatedResult,
@@ -13,6 +7,7 @@ import {
 } from "../../shared/types";
 import {
   KnowledgeBaseContentType,
+  KnowledgeBaseStatus,
   VisibilityLevel,
   SplitType,
 } from "../../shared/enums";
@@ -27,12 +22,12 @@ export class AdminKnowledgeBaseService {
 
   constructor(
     @Inject(KmsTokens.KB_REPOSITORY)
-    private readonly kbRepository: IKnowledgeBaseRepository
+    private readonly kbRepository: IKnowledgeBaseRepository,
   ) {}
 
   async findAllByCompany(
     companyId: string,
-    options: PaginationOptions
+    options: PaginationOptions,
   ): Promise<PaginatedResult<IKnowledgeBase>> {
     return this.kbRepository.findByCompany(companyId, options);
   }
@@ -60,9 +55,7 @@ export class AdminKnowledgeBaseService {
       },
     };
 
-    const settings = dto.settings
-      ? { ...defaultSettings, ...dto.settings }
-      : defaultSettings;
+    const settings = dto.settings ? { ...defaultSettings, ...dto.settings } : defaultSettings;
 
     // Link-in-Bio defaults
     const visibility =
@@ -77,16 +70,13 @@ export class AdminKnowledgeBaseService {
       companyId: dto.companyId,
       ownership: dto.ownership,
       visibility,
-      visibilityStatus: "draft" as any,
+      visibilityStatus: KnowledgeBaseStatus.DRAFT,
       contentType,
       settings,
     });
   }
 
-  async update(
-    kbId: string,
-    dto: UpdateKnowledgeBaseDto
-  ): Promise<IKnowledgeBase> {
+  async update(kbId: string, dto: UpdateKnowledgeBaseDto): Promise<IKnowledgeBase> {
     const existing = await this.kbRepository.findById(kbId);
     if (!existing) throw new NotFoundException("Knowledge base not found");
 

@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { DocumentInterface } from "@langchain/core/documents";
 import { RetrieverSearchType, ArticleSource, SplitType } from "../../shared/enums";
 import {
@@ -15,10 +9,7 @@ import {
 } from "../../shared/types";
 import { RetrieverTokens } from "../../retriever/retriever.tokens";
 import { IKnowledgeRetrieverService } from "../../retriever/interfaces/retriever.interface";
-import {
-  CustomDocumentMetadata,
-  RetrieveQueryOptions,
-} from "../../retriever/types";
+import { CustomDocumentMetadata, RetrieveQueryOptions } from "../../retriever/types";
 import { IKnowledgeBaseRepository } from "../interfaces/kb-repository.interface";
 import { IArticleRepository } from "../interfaces/article-repository.interface";
 import { KmsTokens } from "../kms.tokens";
@@ -39,7 +30,7 @@ function normalizeSubject(subject?: string | null): string {
 
 function dedupeParticipants(participants: string[]): string[] {
   const seen = new Set<string>();
-  return participants.filter(p => {
+  return participants.filter((p) => {
     if (!p?.trim()) return false;
     const n = p.trim().toLowerCase();
     if (seen.has(n)) return false;
@@ -50,7 +41,7 @@ function dedupeParticipants(participants: string[]): string[] {
 
 function computeParticipantsHash(participants: string[]): string {
   return participants
-    .map(p => p?.trim()?.toLowerCase())
+    .map((p) => p?.trim()?.toLowerCase())
     .filter(Boolean)
     .sort()
     .join("|");
@@ -66,14 +57,15 @@ export class SearchService {
     @Inject(KmsTokens.ARTICLE_REPOSITORY)
     private readonly articleRepo: IArticleRepository,
     @Inject(KmsTokens.KB_REPOSITORY)
-    private readonly kbRepo: IKnowledgeBaseRepository
+    private readonly kbRepo: IKnowledgeBaseRepository,
   ) {}
 
   async search(
     query: string,
     searchType: RetrieverSearchType,
     kbId: string,
-    options?: RetrieveQueryOptions
+    _options?: RetrieveQueryOptions,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- LangChain DocumentInterface metadata type
   ): Promise<DocumentInterface<Record<string, any>>[]> {
     if (!kbId) throw new BadRequestException("Knowledge Base ID is required");
     return (await this.retrieverService.search(query, searchType, [kbId])) || [];
@@ -86,9 +78,7 @@ export class SearchService {
 
     const chunkIds = await this.createChunks(article);
     await this.articleRepo.update(articleId, { retrieverChunksIds: chunkIds });
-    this.logger.log(
-      `Article ${articleId} indexed with ${chunkIds.length} chunks`
-    );
+    this.logger.log(`Article ${articleId} indexed with ${chunkIds.length} chunks`);
   }
 
   /** Call this when an article is unpublished to remove it from the index. */
@@ -117,7 +107,7 @@ export class SearchService {
       [document],
       article.retrieverChunksIds,
       article.knowledgeBaseId,
-      splitOptions
+      splitOptions,
     );
 
     await this.articleRepo.update(articleId, { retrieverChunksIds: newIds });
@@ -127,16 +117,10 @@ export class SearchService {
   private async createChunks(article: IArticle): Promise<string[]> {
     const document = this.toDocument(article);
     const splitOptions = await this.getSplitOptions(article);
-    return this.retrieverService.addDocuments(
-      [document],
-      article.knowledgeBaseId,
-      splitOptions
-    );
+    return this.retrieverService.addDocuments([document], article.knowledgeBaseId, splitOptions);
   }
 
-  private toDocument(
-    article: IArticle
-  ): DocumentInterface<CustomDocumentMetadata> {
+  private toDocument(article: IArticle): DocumentInterface<CustomDocumentMetadata> {
     const content = article.publishedArticle ?? article.draftArticle;
     if (!content) {
       throw new BadRequestException("Article has no content to index");
@@ -165,20 +149,21 @@ export class SearchService {
     return { pageContent: pageContent || title || body, metadata };
   }
 
-  private resolveDocType(
-    source?: ArticleSource
-  ): CustomDocumentMetadata["docType"] {
+  private resolveDocType(source?: ArticleSource): CustomDocumentMetadata["docType"] {
     switch (source) {
-      case ArticleSource.FILE: return "file";
-      case ArticleSource.EMAIL: return "email";
-      default: return "article";
+      case ArticleSource.FILE:
+        return "file";
+      case ArticleSource.EMAIL:
+        return "email";
+      default:
+        return "article";
     }
   }
 
   private attachEmailMetadata(
     metadata: CustomDocumentMetadata,
     emailMeta: IArticleEmailMetadata | undefined,
-    fallbackSubject: string
+    fallbackSubject: string,
   ): void {
     if (!emailMeta) {
       metadata.subject = fallbackSubject || metadata.subject;
@@ -187,8 +172,7 @@ export class SearchService {
     }
 
     metadata.subject = emailMeta.subject || fallbackSubject || metadata.subject;
-    metadata.subjectNormalized =
-      emailMeta.subjectNormalized || normalizeSubject(metadata.subject);
+    metadata.subjectNormalized = emailMeta.subjectNormalized || normalizeSubject(metadata.subject);
     metadata.messageId = emailMeta.messageId;
     metadata.inReplyTo = emailMeta.inReplyTo;
     metadata.references = emailMeta.references;
@@ -208,13 +192,11 @@ export class SearchService {
 
     if (aggregated.length) {
       metadata.participants = aggregated;
-      metadata.participantsHash =
-        emailMeta.participantsHash || computeParticipantsHash(aggregated);
+      metadata.participantsHash = emailMeta.participantsHash || computeParticipantsHash(aggregated);
     }
 
     metadata.dateIso = emailMeta.dateIso;
-    metadata.dateEpoch =
-      emailMeta.dateEpoch ?? emailMeta.dateIso?.getTime() ?? undefined;
+    metadata.dateEpoch = emailMeta.dateEpoch ?? emailMeta.dateIso?.getTime() ?? undefined;
     metadata.hasAttachments = emailMeta.hasAttachments;
     metadata.attachmentNames = emailMeta.attachmentNames;
     metadata.labels = emailMeta.labels;
@@ -233,14 +215,9 @@ export class SearchService {
     return {
       enabled: s?.enabled || false,
       splitType: s?.splitType || SplitType.SIZE,
-      chunkSize:
-        s?.chunkSize && s.chunkSize > 0
-          ? s.chunkSize
-          : CHUNKING_DEFAULTS.CHUNK_SIZE,
+      chunkSize: s?.chunkSize && s.chunkSize > 0 ? s.chunkSize : CHUNKING_DEFAULTS.CHUNK_SIZE,
       chunkOverlap:
-        s?.chunkOverlap && s.chunkOverlap >= 0
-          ? s.chunkOverlap
-          : CHUNKING_DEFAULTS.CHUNK_OVERLAP,
+        s?.chunkOverlap && s.chunkOverlap >= 0 ? s.chunkOverlap : CHUNKING_DEFAULTS.CHUNK_OVERLAP,
       separator: s?.separator || CHUNKING_DEFAULTS.SEPARATOR,
     };
   }

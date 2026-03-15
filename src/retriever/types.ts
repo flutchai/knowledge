@@ -2,12 +2,13 @@ import { DocumentInterface } from "@langchain/core/documents";
 
 export interface RetrieveQueryOptions {
   limit?: number;
-  filter?: any;
+  filter?: Record<string, unknown>;
   fetchK?: number;
   lambda?: number;
   scoreThreshold?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- required by LangChain's DocumentInterface constraint
 export interface CustomDocumentMetadata extends Record<string, any> {
   docType?: "article" | "email" | "file" | string;
   sourceType?: "article" | "email" | "file" | string;

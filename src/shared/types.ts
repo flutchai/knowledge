@@ -23,12 +23,7 @@ export const CHUNKING_DEFAULTS = {
   CHUNK_OVERLAP_RATIO: 0.2,
 } as const;
 
-export const DEFAULT_SEPARATORS = [
-  "<!-- CHUNK_SEPARATOR -->",
-  "\n\n",
-  "\n",
-  " ",
-] as const;
+export const DEFAULT_SEPARATORS = ["<!-- CHUNK_SEPARATOR -->", "\n\n", "\n", " "] as const;
 
 export const TEXT_PROCESSING_VALIDATION = {
   SEPARATOR_PATTERN: /^[^\x00-\x1F\x7F]*$/,
@@ -61,12 +56,12 @@ export type CitationValue = {
   };
 };
 
-export type AttachmentValue = CitationValue | string | Record<string, any>;
+export type AttachmentValue = CitationValue | string | Record<string, unknown>;
 
 export interface IAttachment {
   type: AttachmentType;
   value: AttachmentValue;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ─── Knowledge base ───────────────────────────────────────────────────────────
@@ -93,7 +88,7 @@ export interface IKBBaseSettings {
   maxArticleSize: number;
   moderatorIds: string[];
   splitOptions: ISplitOptionsSettings;
-  typeSpecificSettings?: any;
+  typeSpecificSettings?: Record<string, unknown>;
 }
 
 export type IKBSettings = IKBBaseSettings;
